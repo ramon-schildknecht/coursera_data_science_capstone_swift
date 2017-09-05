@@ -32,9 +32,14 @@ The following steps are necessary to reach the result.
 
 
 ### R code
+Includes the following code types:
 - Raw or unused scripts 
 - Data processing scripts 
-- Analysis scripts 
+- Analysis scripts
+
+You'll find these scripts hereinafter:
+- Quizzes 
+- Assignments 
 
 ### Text
 - README file explaining what all the components are
