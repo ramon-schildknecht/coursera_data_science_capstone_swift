@@ -37,7 +37,7 @@ Includes the following code types:
 - Data processing scripts 
 - Analysis scripts
 
-You'll find these scripts hereinafter:
+You'll find these scripts in the folders below:
 - Quizzes 
 - Assignments 
 
