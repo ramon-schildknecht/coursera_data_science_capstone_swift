@@ -18,6 +18,9 @@ The following steps are necessary to reach the result.
 
 ## Organization
 
+### README file 
+The file gives the data product user an overview and a step by step process from the raw data to the final data product.
+
 ### Data
 - data origin: https://help.github.com/articles/working-with-large-files/
 - raw data
@@ -27,24 +30,18 @@ The following steps are necessary to reach the result.
 - processed data 
 - shows way from raw to processed/tidy data 
 
-### Figures
-- Exploratory figures 
-- Final figures
-
 
 ### R code
-Includes the following code types:
+Includes:
 - Raw or unused scripts 
 - Data processing scripts 
 - Analysis scripts
+- Exploratory figures 
+- final figures 
 
-You'll find these scripts in the folders below:
+You'll find these scripts and figures in the folders below:
 - Quizzes 
 - Assignments 
-
-### Text
-- README file explaining what all the components are
-- Final data analysis products like presentations
 
 # Final check
 "shows step by step the way from the problem to the solution
