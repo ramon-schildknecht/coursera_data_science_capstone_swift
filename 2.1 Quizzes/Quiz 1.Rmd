@@ -1,0 +1,76 @@
+---
+title: "Quiz 1"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+# Setting working directory and load packages
+
+```{r}
+library(knitr)
+```
+
+
+```{r setup}
+opts_chunk$set(root.dir = '/Users/Ramon/Documents/R/DS Capstone Project/final/en_US/')
+knitr::opts_knit$set(root.dir = '/Users/Ramon/Documents/R/DS Capstone Project/final/en_US/')
+```
+
+
+# Issue 1
+```{r}
+file.info("en_US.blogs.txt")$size / 1024^2
+```
+Correct answer = "200"
+$~$
+
+
+# Issue 2
+```{r}
+us.blog <- readLines("en_US.blogs.txt")
+us.news <- readLines("en_US.news.txt")
+us.twitter <- readLines("en_US.twitter.txt")
+prettyNum(length(us.twitter), big.mark="'")
+```
+Correct answer = "Over 2 million"
+$~$
+
+
+# Issue 3
+```{r}
+(a <- max(nchar(us.blog)))
+(b <- max(nchar(us.news)))
+(c <- max(nchar(us.twitter)))
+max(a:c)
+```
+Corecct answer = "Over 40 thousand in the blogs data set"
+$~$
+
+
+# Issue 4
+```{r}
+love.count <- sum(grepl("love", us.twitter))
+hate.count <- sum(grepl("hate", us.twitter))
+(answer.i4 <- love.count / hate.count)
+```
+Correct answer = "4"
+$~$
+
+
+# Issue 5
+```{r}
+biostats.position <- grep("biostats", us.twitter)
+us.twitter[biostats.position]
+```
+Correct answer = "They haven't studied for their biostats exam"
+$~$
+
+
+# Issue 6
+```{r}
+i6.tweets <- grep("A computer once beat me at chess, but it was no match for me at kickboxing", us.twitter, value = TRUE)
+length(i6.tweets)
+```
+Correct answer = "3"
+$~$
