@@ -21,8 +21,9 @@ The following steps are necessary to reach the result.
 ### Data
 - data origin: https://help.github.com/articles/working-with-large-files/
 - raw data
+    + Load data and unzip it
     + stored local because GitHub just allows 100 MB per file and the files are over 100 MB
-    + see folder CodeBook for details about the data
+    + see CodeBook.Rmd for details about the data
 - processed data 
 - shows way from raw to processed/tidy data 
 
