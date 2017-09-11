@@ -41,7 +41,8 @@ Includes:
 
 You'll find these scripts and figures in the folders below:
 - Quizzes 
-- Assignments 
+- Assignments
+    + You'll find the milestone report on [RPubs](http://rpubs.com/ramon_schildknecht/dscmr)  
 
 # Final check
 "shows step by step the way from the problem to the solution
