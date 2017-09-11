@@ -1,0 +1,444 @@
+---
+title: "Milestone Report"
+output:
+  html_document:
+    depth: 3
+    highlight: tango
+    number_sections: yes
+    theme: united
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+
+
+
+
+# Load packages
+*Hint: Java JDK must be installed on your personal computer to use the package RWeka.*   
+
+```{r, warning=FALSE}
+library(knitr)
+library(stringi) # for statistical exploration
+library(tm) # for text mining
+library(SnowballC) # for stemming
+library(ggplot2) # show plots
+library(gridExtra) # show multiple plots with ggplot2
+#run this command in macOS "sudo ln -s $(/usr/libexec/java_home)/jre/lib/server/libjvm.dylib /usr/local/lib"
+library(xlsx) #workaround to load rJava which is neede for RWeka
+library(RWeka) # generate ngrams
+library(dplyr) #text wrangling
+library(tidyr) #text wrangling
+library(wordcloud)
+library(tidytext) #text wrangling
+library(ggraph) # plot network graph
+library(igraph) # plot network graph
+```
+
+
+
+
+
+# Overview
+## Report Target
+The objectives are  
+1. Demonstrate that you've downloaded the data and have successfully loaded in  
+2. Create a basic report of summary statistics about the data sets  
+3. Report any interesting findings that you amassed so far  
+4. Get feedback on your plans for creating a prediction algorithm and Shiny app 
+
+## Solution Design
+The solution design is focused on reaching the objectives above.
+
+* Load and show data (objective 1)
+* Preparation steps for reaching the base regarding objective 2
+    + Sampling
+    + Create Corpus
+    + Cleaning data
+    + Create ngrams through tokenization
+* Create report of summary statistics (objective 2)
+    + Frequencies
+    + Markov chains
+    + Tag clouds
+* Report interesting findings (objective 3)
+* Get feedback on my plans for creating a predicton algorithm and Shiny App (objective 4)
+    
+
+
+# R setup
+Change working directory to my target directory.
+
+```{r setup}
+opts_chunk$set(root.dir = '/Users/Ramon/Documents/R/DS Capstone Project/final/en_US/')
+knitr::opts_knit$set(root.dir = '/Users/Ramon/Documents/R/DS Capstone Project/final/en_US/')
+```
+
+
+
+
+# Load and show data
+## Load data
+As requirement the data must be downloaded and unzipped. You can find my approach in [this file](https://github.com/ramon-schildknecht/coursera_data_science_capstone_swift/blob/master/1%20Data/1.%20Load%20data%20from%20web%20and%20unzip%20it.Rmd) on github.
+
+Afterwards we can load the data in. We load the data as UTF-8 format. This format is developing itself to a standard format, is user-friendly, is well supported and a HTML purifier. For details click [here](http://htmlpurifier.org/docs/enduser-utf8.html#whyutf8).
+
+```{r}
+us.blogs <- readLines("en_US.blogs.txt", skipNul = TRUE, encoding = "UTF-8")
+us.news <- readLines("en_US.news.txt", skipNul = TRUE, encoding = "UTF-8")
+us.twitter <- readLines("en_US.twitter.txt", skipNul = TRUE, encoding = "UTF-8")
+```
+
+
+
+## Show data
+We perform simple commands like head() and summary(). Additionally we generate three histograms that show the frequency of text entries by number of words.
+
+```{r, warning=FALSE}
+# Set number display to decimal format
+options(scipen = 999)
+format(1e6, big.mark=",", scientific=FALSE)
+# use head and summary regarding the us blogs example
+head(us.blogs, 3)
+
+# more character analysis analysis
+(statistics.us.blogs <- stri_stats_general(us.blogs))
+(statistics.us.news <- stri_stats_general(us.news))
+(statistics.us.twitter <- stri_stats_general(us.twitter))
+
+# textual analysis
+words.us.blogs <- stri_count_words(us.blogs)
+words.us.news <- stri_count_words(us.news)
+words.us.twitter <- stri_count_words(us.twitter)
+
+# summaries
+summary(words.us.blogs)
+summary(words.us.news)
+summary(words.us.twitter)
+a <- sd(words.us.blogs)
+b <- sd(words.us.news)
+c <- sd(words.us.twitter)
+# standard deviations
+c(a,b,c)
+
+q1 <- qplot(words.us.blogs,
+      geom="histogram",
+      binwidth = 20, 
+      main = "Frequency Blog messages by number of words",
+      fill=I("blue"), 
+      alpha=I(.5),
+      xlim=c(0,300))
+
+q2 <- qplot(words.us.news,
+      geom="histogram",
+      binwidth = 10, 
+      main = "Frequency News messages by number of words",
+      fill=I("blue"), 
+      alpha=I(.5),
+      xlim=c(0,150))
+
+q3 <- qplot(words.us.twitter,
+      geom="histogram",
+      binwidth = 5, 
+      main = "Frequency Twitter messages by number of words",
+      fill=I("blue"), 
+      alpha=I(.5),
+      xlim=c(0,40))
+grid.arrange(q1, q2, q3, nrow = 3)
+```
+
+
+
+# Preparation steps
+
+## Sampling
+```{r}
+# Check length of objects
+(us.blogs.length <- length(us.blogs))
+(us.news.length <- length(us.news))
+(us.twitter.length <- length(us.twitter))
+```
+
+We see that all three objects are over 800'000 rows long. For performance reasons like running time and decreased memory usage we sample our objects. We estimate that a sampling size of 5'000 lines per object is optimal.
+
+```{r}
+set.seed(22)
+us.blogs.sample <- us.blogs[sample(1:length(us.blogs), 5000)]
+us.news.sample <- us.news[sample(1:length(us.news), 5000)]
+us.twitter.sample <- us.twitter[sample(1:length(us.twitter), 5000)]
+sample <- c(us.blogs.sample, us.news.sample, us.twitter.sample)
+writeLines(sample, "./sample/sampleAll.text")
+```
+
+In a next step we remove unnecessary objects to improve RAM storage.
+
+```{r}
+rm(us.blogs, us.news, us.twitter, us.blogs.sample, us.news.sample, us.twitter.sample)
+```
+
+
+
+## Create corpus
+
+We create our corpus from the generated sample data above. 
+
+```{r}
+temporary <- file.path(".", "sample")
+# important note: use VCorpus instead of Corpus to avoid problems generating ngrams
+us.corpus <- VCorpus(DirSource(temporary))
+rm(temporary)
+```
+
+
+
+## Cleaning data
+
+Our goal here is to achieve [tidy data](https://www.jstatsoft.org/article/view/v059i10/v59i10.pdf). Tidy data is the foundation for analysis. We perform different cleaning actions:
+- convert to lower case  
+- remove URLs  
+- remove punctuation and numbers
+- remove stopwords  
+- remove extra whitespace
+
+Special thanks to Yanchang Zhao who provided the cleaning aspects in his presentation ["Text Mining with R - Twitter Data Analysis"](http://www2.rdatamining.com/uploads/5/7/1/3/57136767/rdatamining-slides-text-mining.pdf).
+
+```{r}
+us.corpus.copy <- us.corpus
+us.corpus <- tm_map(us.corpus, content_transformer(tolower))
+remove.URL <- function(x) gsub("http[^[:space:]]*", "", x)
+us.corpus <- tm_map(us.corpus, content_transformer(remove.URL))
+#remove punctuation and numbers
+remove.num.punctuation <- function(x) gsub("[^[:alpha:][:space:]]*", "", x)
+us.corpus <- tm_map(us.corpus, content_transformer(remove.num.punctuation))
+us.corpus <- tm_map(us.corpus, removeWords, stopwords("english"))
+```
+
+
+Now we perform stemming to reduce complexity without any severe loss of information.
+
+```{r}
+us.corpus <- tm_map(us.corpus, stemDocument)
+#writeLines(as.character(us.corpus), con="cleanCorpus.txt")
+```
+
+
+
+## Create ngrams through tokenization
+We perform tokenization. This is the process to split our tokens in a one-row-per-token-structure. Afterwards we create ngrams with one to three words (unigram, bigram and trigram). We transform the corpus into the useful data term matrix on which we perform our further analysis.  
+
+```{r}
+Tokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 1, max = 1))
+unigram.dtm <- DocumentTermMatrix(us.corpus, 
+                          control = list(tokenize = Tokenizer))
+
+BigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+bigram.dtm <- DocumentTermMatrix(us.corpus, 
+                             control = list(tokenize = BigramTokenizer))
+
+TrigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
+trigram.dtm <- DocumentTermMatrix(us.corpus, 
+                             control = list(tokenize = TrigramTokenizer))
+```
+
+
+
+
+# Create report of summary statistics
+
+## Frequencies
+
+First we are interested in hits greater than the 99.95 or 99.99 perzentile concerning the frequencies. These are the ones with the most occurences. 
+
+
+### Unigram
+```{r}
+unigram.frequency <- sort(colSums(as.matrix(unigram.dtm)), decreasing=TRUE)
+unigram.word.frequency <- data.frame(word=names(unigram.frequency), freq=unigram.frequency)
+unigram.word.frequency %>% filter(freq > quantile(freq,0.9995))
+```
+
+
+
+### Bigram
+```{r}
+bigram.frequency <- sort(colSums(as.matrix(bigram.dtm)), decreasing=TRUE)
+bigram.word.frequency <- data.frame(word=names(bigram.frequency), freq=bigram.frequency)
+bigram.word.frequency %>% filter(freq > quantile(freq,0.9999))
+```
+
+
+
+### Trigram
+```{r}
+trigram.frequency <- sort(colSums(as.matrix(trigram.dtm)), decreasing=TRUE)
+trigram.word.frequency <- data.frame(word=names(trigram.frequency), freq=trigram.frequency)
+trigram.word.frequency %>% filter(freq > quantile(freq,0.9999))
+```
+
+
+
+
+
+
+
+
+## Markov chains
+Second we create a few network graphs for the bigrams to get a better word relationsship overview.  This is a visualization of a Markov chain, a common model in text processing. In a Markov chain, each choice of word depends only on the previous word. In our case, a random generator following this model would predict "now" after the word "right". We show just the top word pairs but you can see in the third graph that the visual limit is rapidly reached. You could imagine an enormous graph representing all connections that are present in the text.
+
+
+
+### Graph from 99.99 percentile of top word pairs
+
+```{r}
+bigram.counts <- bigram.word.frequency %>%
+  separate(word, c("word1", "word2"), sep = " ")
+
+bigram.graph <- bigram.counts %>%
+        filter(freq > quantile(freq,0.9999)) %>%
+        graph_from_data_frame()
+
+set.seed(22)
+a <- grid::arrow(type = "open", length = unit(.15, "inches"))
+
+ggraph(bigram.graph, layout = "fr") +
+        geom_edge_link(arrow = a, end_cap = circle(.07, 'inches')) +
+        geom_node_point(color = "green", size = 2) +
+        geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+        theme_void()
+
+
+```
+
+
+
+### Graph from 99.99 percentile of top word pairs
+
+```{r}
+bigram.counts <- bigram.word.frequency %>%
+  separate(word, c("word1", "word2"), sep = " ")
+
+bigram.graph <- bigram.counts %>%
+        filter(freq > quantile(freq,0.999)) %>%
+        graph_from_data_frame()
+
+set.seed(22)
+a <- grid::arrow(type = "open", length = unit(.15, "inches"))
+
+ggraph(bigram.graph, layout = "fr") +
+        geom_edge_link(arrow = a, end_cap = circle(.07, 'inches')) +
+        geom_node_point(color = "green", size = 2) +
+        geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+        theme_void()
+
+
+```
+
+
+### Graph from 99.9 percentile of top word pairs --> not really useful anymore
+
+```{r}
+bigram.counts <- bigram.word.frequency %>%
+  separate(word, c("word1", "word2"), sep = " ")
+
+bigram.graph <- bigram.counts %>%
+        filter(freq > quantile(freq,0.99)) %>%
+        graph_from_data_frame()
+
+set.seed(22)
+a <- grid::arrow(type = "open", length = unit(.15, "inches"))
+
+ggraph(bigram.graph, layout = "fr") +
+        geom_edge_link(arrow = a, end_cap = circle(.07, 'inches')) +
+        geom_node_point(color = "green", size = 2) +
+        geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+        theme_void()
+
+
+```
+
+
+
+## Tag clouds
+Finally we generate tag clouds to reveal the essential. Furthermore they are fastly generated and these visualizations are engaging. 
+
+*Interpretation hint: Blue means more and yellow less*
+
+### Histogram and best 25 unigrams 
+```{r, warning=FALSE}
+set.seed(22)
+wordcloud(names(unigram.frequency), unigram.word.frequency$freq, max.words=25, scale=c(4, 0.5), colors=brewer.pal(6, "RdYlBu"))
+
+qplot(unigram.word.frequency$freq,
+      geom="histogram",
+      binwidth = 1, 
+      main = "Word frequencies unigrams",
+      fill=I("blue"), 
+      alpha=I(.5),
+      xlim=c(0,50),
+      ylim=c(0,3500))
+```
+
+
+### Histogram and best 25 bigrams
+```{r, warning=FALSE}
+set.seed(22)
+wordcloud(names(bigram.frequency), bigram.word.frequency$freq, max.words=25, scale=c(2, 1), colors=brewer.pal(6, "RdYlBu"))
+
+qplot(bigram.word.frequency$freq,
+      geom="histogram",
+      binwidth = 1, 
+      main = "Word frequencies bigrams",
+      fill=I("blue"), 
+      alpha=I(.5),
+      xlim=c(0,50),
+      ylim=c(0,230))
+```
+
+
+
+### Histogram and best 25 trigrams
+```{r, warning=FALSE}
+set.seed(22)
+wordcloud(names(trigram.frequency), trigram.word.frequency$freq, max.words=25, scale=c(3, 0.3), colors=brewer.pal(6, "RdYlBu"))
+
+qplot(trigram.word.frequency$freq,
+      geom="histogram",
+      binwidth = 1, 
+      main = "Word frequencies bigrams",
+      fill=I("blue"), 
+      alpha=I(.5),
+      xlim=c(0,30),
+      ylim=c(0,125))
+```
+
+
+
+
+# Report interesting findings
+Regarding to the nummber of words we see that the blogs and news files have similar medians (28 vs 32) as well as similar means (41.75 vs 34.41). The range is a lot different trough (6726 vs. 1796). The twitter objects have a much smaller median (12) as well as the mean (12.75). The range (47) is pretty small, too. The standard deviations variate a lot (news = 46.59, news = 22.83, twitter = 6.91).  
+
+The frequencies of the most number of words regarding the blog object are below 25 words. They are decreasing fast up to 100 words per object. After there are a few with a lot of words.
+The frequencies of the most number of words regarding the news object are between 25 and 35 words.
+They are decreasing fast up to 75 words per object. After there are a few with a lot of words.
+The frequencies of the most number of words regarding the twitter object are below 7.5 words.
+They are decreasing fast up to 27.5 words per object. After there are a few between 27.5 and 32.5 words. 
+
+We see at the word frequencies comparing the unigram, bigram and trigram that there are almost no overlaps. Just the word like is found in the uni- and bigram.
+
+The most single words are verbs. The most counted bigrams contain a lot of time related words like "last year", "right now" or "year ago". The most counted trigrams contain either places, congratulations or famous personalities. The top entry contains three words from a song of Big Sean.
+
+Very useful are the token frequency histograms. They all show that by far the most frequencies appear between 0 and 10 token (unigram, bigram, trigram) counts. We need to pay attentation to this insight regarding to model developement (see next chapter).
+
+Our markov chains network graphs confirm the insights about the content of our tokens (bigram and trigram). The bigram contains mainly time and location information. The 99.99 percentile graph expand the insights and tell us that there are a lot of verbs used.
+
+
+
+
+# Get feedback on my plans for creating a predicton algorithm and Shiny App
+The model we like to use is a n-gram model which is based on the principles of Markov chain.
+The idea is to predict a word after one to several input words. The prediction of the probabilty is based on the n-1 previous words. When we choose a trigram (n = 3) and the user likes to predict the next word for his sentence "I am going to New" our model should predict "York" according to the two previous words "to New". 
+
+We assume small n-gram histories under certains condititions. For better accuracy we will therefore use [Katz' back-off model](https://en.wikipedia.org/wiki/Katz%27s_back-off_model). 
+
+We use [Good-Turing smooting](http://recognize-speech.com/language-model/n-gram-model/good-turing) for n-gram frequencies smaller or equal to 5. As we saw in the histograms above there are a lot of such n-gram frequencies.
+
