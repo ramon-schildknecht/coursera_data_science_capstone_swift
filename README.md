@@ -4,7 +4,7 @@
 The goal is to create a data product that takes one or words as input and predicts the next best word. The use case comes from the company SwiftKey. The benefit for the end user is simple: He saves time and is more efficient. If we can predict the next best word with an accuracy of 50% the user will then save about 50% personal time regarding the "typing process" on his mobile device.
 
 ## Result
-A shiny app which takes one to several words as input and predicts the next best word as outcome. A brief presentation using RStudio Presenter shows you the way from your input to the generated output including the predictive performance KPI.
+A shiny app which takes one to several words as input and predicts the next best word as outcome. A brief presentation using RStudio Presenter shows you the way from your input to the generated output including the predictive performance KPI. The access to the final presentation as well as the data product is below (see R code).
 
 ## Method
 The following steps are necessary to reach the result.
