@@ -31,20 +31,10 @@ The file gives the data product user an overview to the raw data and the final d
 
 
 ### R code
-Includes:
-- Raw or unused scripts 
-- Data processing scripts 
-- Analysis scripts
-- Exploratory figures 
-- final figures 
-
 You'll find these scripts and figures in the folders below:
 - Quizzes 
+    + Solution to Quiz 1
 - Assignments
     + You'll find the milestone report on [RPubs](http://rpubs.com/ramon_schildknecht/dscmr) 
-    + You'll find the final presentation on [RPubs](http://rpubs.com/ramon_schildknecht/predict_next_probable_word)
+    + You'll find the final presentation with the most important information on [RPubs](http://rpubs.com/ramon_schildknecht/predict_next_probable_word)
     + You'll find the final Shiny data product to predict the next probable word [here on Shinyapps.io](https://rasch.shinyapps.io/predict_next_probable_words/)
-
-# Final check
-"shows step by step the way from the problem to the solution
-explain what’s going on in your project, a more formal report that you have to write, or even a paper that you plan on publishing. All this text is going to integrate everything you’ve done in this data analysis, with the data, the figures, the tables, and the R code."
