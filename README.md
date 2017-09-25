@@ -37,4 +37,4 @@ You'll find these scripts and figures in the folders below:
 - Assignments
     + You'll find the milestone report on [RPubs](http://rpubs.com/ramon_schildknecht/dscmr) 
     + You'll find the final presentation with the most important information on [RPubs](http://rpubs.com/ramon_schildknecht/predict_next_probable_word)
-    + You'll find the final Shiny data product to predict the next probable word [here on Shinyapps.io](https://rasch.shinyapps.io/predict_next_probable_words/)
+    + You'll find the final Shiny data product to predict the next probable word [here on Shinyapps.io](https://rasch.shinyapps.io/predict_next_probable_words/). The necessary files to reproduce the shiny app are in the folder 2.2 Assignments/Shiny/. Hint: You need to [download this trigram file](https://smileyl.sharepoint.com/sites/sbb/b/b8/_layouts/15/guestaccess.aspx?docid=0b2595368ea7e44c0a4529f74263498cb&authkey=ASxxJsc_bC_U2peS50CYX1s) as well. The file size didn't met Githubs limits.
